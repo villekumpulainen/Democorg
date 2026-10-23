@@ -17,11 +17,11 @@ Plain JavaScript modules and an HTML canvas. There is no framework, no build ste
 | Flashing `!` | About 0.5 s of warning before the owner looks up. |
 | Eye and red cone | The owner is watching. Mischief costs full trust, and starting a grab costs extra. |
 | Burger, stroller sock, smelly patch | Stay inside the small ring until the meter fills. Burgers and smelly patches pull the dog's nose toward them (dashed ring). |
-| "Leave it!" | Get outside the dashed red ring within about 2 s to earn a treat (+50 score, +15 trust). Grabbing that target anyway costs extra trust. |
-| Lampposts, benches, trash cans | The leash wraps around them. Wrap one far enough and the owner stops and gets busy untangling (`#@!`). While they're busy they aren't watching, so mischief is cheap. Unwind it yourself, or after a few seconds (see the bar under "TANGLED!") the owner lifts the leash over and loses some trust. |
+| "Leave it!" | The owner stops and a red circle appears around the target. Stay out of it until its countdown runs out (1.5 s) to earn a treat (+50 score, +15 trust). The smell pulls the dog in, so it takes some effort. Grabbing the target anyway costs extra trust. |
+| Lampposts, benches, trash cans | The leash snags on them. The easy way is to hold the dog on the far side of a lamppost while the owner walks past. The owner then stops, fumbles with the leash (`#@!`) and lets out about 1.5 m of extra slack. While they're busy they aren't watching, so mischief is cheap. Treats sometimes sit on the grass just past a lamppost, out of normal reach: snag the owner on that post to get them. Unwind the leash yourself, or after a few seconds (see the bar under "TANGLED!") the owner lifts it over and loses some trust. |
 | Joggers (purple) | Hold the leash taut across their path to trip them. |
 | Squirrels (brown) | They bolt for the trees on the grass when the dog gets close. Cut them off and catch one. |
-| Pigeons (grey dots) | Charge the flock to scatter it. If they burst near the owner, the owner is startled (`!?`), stops, and drops their sandwich. |
+| Pigeons (grey dots) | Charge the flock to scatter it. If they burst near the owner, the owner is startled, drops their sandwich and glares at the dog: "Leave it!" Steal it for points and a chain at a big trust cost, or obey for a treat. After a few seconds they pick it back up. |
 | Trash cans (green) | Ram one at speed to knock it over. Garbage spills out to grab, and any pigeons nearby scatter. |
 | Chains | Havoc and mischief within 4 s of each other build a chain. Each link adds +50% score. |
 
@@ -91,7 +91,7 @@ The leash is a Verlet rope of `leashSegments` points between the hand and the co
 3. Stretch-only distance constraints and obstacle collisions run with both ends pinned. Collisions check points and segment midpoints, so the rope can't slip through a lamppost.
 4. If the rope's path is now longer than the leash, the dog is pulled back along the rope by the excess. That's how a taut leash drags the dog with the owner, including around a post.
 
-**Tension** measures how hard the player pushes the dog away from the leash while it is taut, from 0 to 1, smoothed over time. **Tangles** are measured by adding up how far the rope winds around each obstacle it touches. Past `tangleAngle` (200° by default), the owner stops.
+**Tension** measures how hard the player pushes the dog away from the leash while it is taut, from 0 to 1, smoothed over time. **Tangles** are measured by adding up how far the rope winds around each obstacle it touches. Past `tangleAngle` (160° by default), the owner stops.
 
 ### Interpretation choices
 
@@ -99,7 +99,7 @@ These are the places where the spec left room and the prototype had to pick some
 
 - **Dog friction 0.85** means the dog keeps 85% of its speed every 0.1 s while coasting, so it stops in about a second.
 - **Nose pull** biases the dog's steering by the pull × 0.5 s. A plain force would be cancelled out by finger steering, so you have to actively steer away from a smell.
-- **"Leave it"** has a 50% chance of triggering the first time the dog comes within 1.5 m of a target, whatever state the owner is in.
+- **"Leave it"** has a 50% chance of triggering the first time the dog comes within 3 m of a target, whatever state the owner is in. The owner stops while waiting, otherwise the leash would drag the dog into the circle.
 - **Starting a grab while watched** only costs trust when the player is steering. Being dragged over a target doesn't count.
 - **The home bonus** is 500 plus 5 × the trust left.
 

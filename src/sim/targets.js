@@ -35,12 +35,24 @@ export function createTarget(type, x, y) {
     progress: 0, grabbing: false, done: false,
     alertPenalized: false,
     leaveItChecked: false,
-    leaveIt: 'none', // 'none' | 'active' | 'obeyed' | 'expired'
+    leaveIt: 'none', // 'none' | 'active' | 'obeyed' | 'ignored'
     leaveItTimer: 0,
+    leaveItArmed: false, // the dog has been outside the no-go circle since "leave it"
+    pickupTimer: Infinity, // dropped sandwiches: the owner picks it back up when this runs out
   };
 }
 
-export function spawnTarget(targets, obstacles, y) {
+// Lampposts on the grass side sometimes have a treat just past them: out of the leash's
+// normal reach, reachable by tangling the owner on that post (they let out slack).
+const BAIT_X = -0.95;
+
+export function spawnTarget(targets, obstacles, y, cfg) {
+  const post = obstacles.find((o) => o.kind === 'post' && o.x < 1 && !o.baited && Math.abs(o.y - y) < 5);
+  if (post && Math.random() < cfg.postBaitChance) {
+    post.baited = true;
+    targets.push(createTarget(pick(['burger', 'smelly']), BAIT_X, post.y + rand(-0.5, 0.5)));
+    return;
+  }
   const type = pick(SPAWNABLE);
   let x = 2;
   for (let tries = 0; tries < 8; tries++) {
@@ -77,14 +89,26 @@ export function stepTargets(targets, dog, owner, cfg, dt, events) {
         events.push({ type: 'leaveItSaid', target: t });
       }
     }
+    // "Leave it": keep out of the no-go circle until the countdown runs out. A dog that was
+    // already inside when it was said just has to get out and stay out.
     if (t.leaveIt === 'active') {
       t.leaveItTimer -= dt;
-      if (d > cfg.leaveItEscapeRadius) {
+      const inside = d < cfg.leaveItNoGoRadius;
+      if (!inside) t.leaveItArmed = true;
+      if ((inside && t.leaveItArmed) || (t.leaveItTimer <= 0 && inside)) {
+        t.leaveIt = 'ignored';
+        events.push({ type: 'leaveItIgnored', target: t });
+      } else if (t.leaveItTimer <= 0) {
         t.leaveIt = 'obeyed';
         events.push({ type: 'leaveItObeyed', target: t });
-      } else if (t.leaveItTimer <= 0) {
-        t.leaveIt = 'expired';
       }
+    }
+
+    t.pickupTimer -= dt;
+    if (t.pickupTimer <= 0 && !t.grabbing) {
+      t.done = true;
+      events.push({ type: 'pickedUp', target: t });
+      continue;
     }
 
     if (d < cfg.grabRadius) {

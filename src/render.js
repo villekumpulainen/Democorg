@@ -1,16 +1,17 @@
 // Greybox canvas renderer. Reads game state, never changes it.
 
-import { GRASS_LEFT, SIDEWALK_LEFT, SIDEWALK_RIGHT, CURB_RIGHT, OWNER_LANE_X } from './sim/world.js';
+import { GRASS_LEFT, SIDEWALK_LEFT, SIDEWALK_RIGHT, CURB_RIGHT } from './sim/world.js';
 import { TARGET_TYPES } from './sim/targets.js';
 import { isAlert } from './sim/owner.js';
 import { clamp, lerp } from './sim/util.js';
 
-const VIEW_WIDTH_M = 6;
+const VIEW_WIDTH_M = 6.4;
+const CAMERA_X = 1.8; // a little left of the owner's lane so treats on the grass stay on screen
 const VIEW_HEIGHT_M = 10;
 const OWNER_SCREEN_Y = 0.68; // owner sits this far down the screen
 
 export function createCamera() {
-  return { x: OWNER_LANE_X, y: 0, ppm: 60, w: 1, h: 1 };
+  return { x: CAMERA_X, y: 0, ppm: 60, w: 1, h: 1 };
 }
 
 export function updateCamera(cam, game, w, h) {
@@ -140,11 +141,17 @@ export function render(ctx, game, cam, cfg) {
       ctx.stroke();
     }
     if (t.leaveIt === 'active') {
-      // Where the dog has to get to for the treat.
-      ctx.strokeStyle = 'rgba(255,90,78,0.45)';
-      ctx.setLineDash([6, 6]);
-      ring(ctx, sx, sy, cfg.leaveItEscapeRadius * ppm, 1.5);
-      ctx.setLineDash([]);
+      // No-go circle: stay out until the countdown arc runs out to earn the treat.
+      const r = cfg.leaveItNoGoRadius * ppm;
+      ctx.fillStyle = 'rgba(255,60,50,0.15)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,90,78,0.9)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, -Math.PI / 2, -Math.PI / 2 + (t.leaveItTimer / cfg.leaveItWindow) * Math.PI * 2);
+      ctx.stroke();
     }
   }
 
@@ -250,13 +257,12 @@ function drawCritters(ctx, game, X, Y, ppm) {
 
 function drawAttentionIcon(ctx, o, x, y, ppm, time) {
   const s = Math.max(10, ppm * 0.2);
-  if (o.busy) {
-    // Flustered: swearing symbols for a tangle, a jolt for a startle.
-    ctx.fillStyle = o.busy.reason === 'tangled' ? '#ff9a3c' : '#ff7be0';
+  if (o.busy?.reason === 'tangled') {
+    // Fumbling with the leash: not watching.
+    ctx.fillStyle = '#ff9a3c';
     ctx.font = `bold ${Math.round(s * 1.4)}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
-    const jitter = Math.sin(time * 30) * 2;
-    ctx.fillText(o.busy.reason === 'tangled' ? '#@!' : '!?', x + jitter, y + s * 0.5);
+    ctx.fillText('#@!', x + Math.sin(time * 30) * 2, y + s * 0.5);
   } else if (o.attention === 'alert') {
     ctx.fillStyle = '#fff';
     ctx.beginPath();
@@ -314,11 +320,14 @@ function drawHud(ctx, game, cfg, w) {
   ctx.fillStyle = '#fff';
   ctx.fillRect(pad, pad + 42, barW * prog, 4);
 
+  if (game.targets.some((t) => t.leaveIt === 'active')) {
+    ctx.textAlign = 'center';
+    banner(ctx, 'LEAVE IT! Stay out of the red circle', '#ff5a4e', w / 2, pad + 110);
+  }
+
   if (game.leash.tangled) {
     ctx.textAlign = 'center';
-    ctx.font = 'bold 22px system-ui, sans-serif';
-    ctx.fillStyle = '#ff9a3c';
-    ctx.fillText('TANGLED! Owner is busy', w / 2, pad + 80);
+    banner(ctx, 'TANGLED! Owner busy, leash loose', '#ff9a3c', w / 2, pad + 80);
     // How long until the owner gives up and untangles it themselves.
     const left = 1 - clamp(game.tangleTimer / cfg.tangleFumbleTime, 0, 1);
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
@@ -326,6 +335,18 @@ function drawHud(ctx, game, cfg, w) {
     ctx.fillStyle = '#ff9a3c';
     ctx.fillRect(w / 2 - 80, pad + 88, 160 * left, 5);
   }
+}
+
+// Centred HUD prompt on a dark pill so it reads over the street.
+function banner(ctx, text, color, x, y) {
+  ctx.font = 'bold 17px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  const tw = ctx.measureText(text).width + 20;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  roundRect(ctx, x - tw / 2, y - 19, tw, 27, 8);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
 }
 
 function circle(ctx, x, y, r, color) {

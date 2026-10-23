@@ -64,7 +64,7 @@ export function stepGame(g, cfg, input, dt) {
   g.world.spawnTimer -= dt;
   if (g.world.spawnTimer <= 0) {
     const y = owner.y - 12;
-    if (y > -g.walkDistance + 2) spawnTarget(g.targets, g.obstacles, y);
+    if (y > -g.walkDistance + 2) spawnTarget(g.targets, g.obstacles, y, cfg);
     g.world.spawnTimer = rand(Math.min(cfg.spawnMin, cfg.spawnMax), Math.max(cfg.spawnMin, cfg.spawnMax));
   }
 
@@ -131,10 +131,15 @@ function stepYank(g, cfg, dt) {
   }
 }
 
+const TANGLE_SLACK_RATE = 1.5; // m/s the owner lets out / reels in slack
+
 // While tangled the owner is busy (not watching). If the dog doesn't unwind it in time,
 // the owner lifts the leash over the obstacle themselves, and is annoyed about it.
 function stepTangle(g, cfg, dt) {
   const { leash, owner, dog } = g;
+  // Fumbling, the owner lets out some slack; afterwards they reel it back in.
+  if (leash.tangled) leash.extra = Math.min(cfg.tangleSlack, leash.extra + TANGLE_SLACK_RATE * dt);
+  else leash.extra = Math.max(0, leash.extra - TANGLE_SLACK_RATE * dt);
   if (!leash.tangled) { g.tangleTimer = 0; return; }
   if (g.tangleTimer === 0) say(owner, 'Ugh, hold on…', 1.5);
   g.tangleTimer += dt;
@@ -171,7 +176,15 @@ function handleEvent(g, cfg, e) {
   const t = e.target;
   switch (e.type) {
     case 'leaveItSaid':
+      // The owner stops and waits, so the leash doesn't drag the dog into the circle.
       say(g.owner, 'Leave it!', cfg.leaveItWindow);
+      if (!g.owner.busy) g.owner.busy = { reason: 'waiting', timer: cfg.leaveItWindow };
+      break;
+    case 'leaveItIgnored':
+      say(g.owner, 'I said leave it!', 1.2);
+      break;
+    case 'pickedUp':
+      say(g.owner, 'Phew, mine.', 1.2);
       break;
     case 'leaveItObeyed':
       g.score += cfg.leaveItScore;
@@ -217,10 +230,15 @@ function handleEvent(g, cfg, e) {
       havoc(g, cfg, 'pigeon', f.x, f.y, 'Pigeons!');
       const o = g.owner;
       if (dist(f, o) < cfg.startleRadius && o.busy?.reason !== 'startled') {
-        startle(o, cfg.startleTime);
-        say(o, 'Aah! My sandwich!', 1.6);
-        const snack = createTarget('snack', o.x - 0.5, o.y + 0.3);
+        // The owner drops their sandwich and glares: a real choice between a treat and a steal.
+        startle(o, cfg.startleTime, cfg);
+        say(o, 'Aah! Leave it!', cfg.leaveItWindow);
+        const side = g.dog.x < o.x ? 1 : -1; // dropped on the side away from the dog
+        const snack = createTarget('snack', o.x + side * 0.7, o.y - 0.5);
         snack.leaveItChecked = true;
+        snack.leaveIt = 'active';
+        snack.leaveItTimer = cfg.leaveItWindow;
+        snack.pickupTimer = cfg.snackPickupTime;
         g.targets.push(snack);
         floater(g, o.x, o.y - 0.8, 'Startled!', '#ff7be0');
       }

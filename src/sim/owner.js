@@ -1,6 +1,7 @@
 // The owner: walks forward at a constant pace (slowed by tension, stopped by tangles)
 // and cycles distracted -> warning -> alert on a randomized timer. While busy (untangling
-// the leash, or startled) they stand still and aren't watching the dog.
+// the leash, startled, or waiting out a "leave it") they stand still; untangling, they
+// aren't watching the dog.
 
 import { rand } from './util.js';
 import { OWNER_LANE_X } from './world.js';
@@ -12,16 +13,19 @@ export function createOwner(cfg) {
     attention: 'distracted', // 'distracted' | 'warning' | 'alert'
     attentionTimer: 0,
     speech: null, speechTimer: 0,
-    busy: null, // null | { reason: 'tangled' | 'startled', timer }
+    busy: null, // null | { reason: 'tangled' | 'startled' | 'waiting', timer }
   };
   owner.attentionTimer = randRange(cfg.distractedMin, cfg.distractedMax);
   return owner;
 }
 
-export const isAlert = (owner) => owner.attention === 'alert' && !owner.busy;
+// Fumbling with a tangle means not watching. A startled owner stops but stares at the dog.
+export const isAlert = (owner) => owner.attention === 'alert' && owner.busy?.reason !== 'tangled';
 
-export function startle(owner, seconds) {
+export function startle(owner, seconds, cfg) {
   owner.busy = { reason: 'startled', timer: seconds };
+  owner.attention = 'alert';
+  owner.attentionTimer = seconds + randRange(cfg.alertMin, cfg.alertMax);
 }
 
 export function stepOwner(owner, cfg, dt, tension, tangled) {

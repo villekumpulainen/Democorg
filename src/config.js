@@ -38,12 +38,12 @@ export const DEFAULTS = {
   yankStun: 0.35,              // s the dog ignores the finger after a yank
   yankTrustCost: 8,
   yankCooldown: 1.2,           // s
-  tangleAngle: 200,            // degrees of wrap around an obstacle that counts as tangled
+  tangleAngle: 160,            // degrees of wrap around an obstacle that counts as tangled
   grabAlertStartPenalty: 5,    // trust lost for starting a grab while watched
   leaveItChance: 0.5,          // chance the owner says "leave it" near a target
-  leaveItTriggerRadius: 1.5,   // m
-  leaveItEscapeRadius: 2.3,    // m from target that counts as "moved away"
-  leaveItWindow: 2,            // s
+  leaveItTriggerRadius: 3.0,   // m: the owner says it when the dog gets this close
+  leaveItNoGoRadius: 0.9,      // m: keep out of this circle until the countdown ends
+  leaveItWindow: 1.5,          // s
   leaveItScore: 50,
   leaveItTrust: 15,
   leaveItIgnorePenalty: 15,    // extra trust lost for grabbing after "leave it"
@@ -61,6 +61,9 @@ export const DEFAULTS = {
   chainWindow: 4,              // s after a havoc event in which the next one chains
   chainBonus: 0.5,             // extra score multiplier per chain link
   tangleFumbleTime: 4,         // s the owner fumbles with a tangle before lifting the leash over
+  tangleSlack: 1.5,            // m of extra leash the owner lets out while fumbling
+  postBaitChance: 0.4,         // chance a target spawns just past a grass-side lamppost
+  snackPickupTime: 3,          // s before the owner picks their dropped sandwich back up
   untangleTrustCost: 6,        // trust lost when the owner has to untangle it themselves
   joggerSpeed: 3.2,
   tripScore: 600, tripCostAlert: 40, tripCostDistracted: 15,
@@ -118,7 +121,7 @@ export const SCHEMA = [
   ['Leave it', [
     ['leaveItChance', 'Chance', 0, 1, 0.05],
     ['leaveItTriggerRadius', 'Trigger radius', 0.5, 4, 0.1],
-    ['leaveItEscapeRadius', 'Escape radius', 0.5, 5, 0.1],
+    ['leaveItNoGoRadius', 'No-go radius', 0.3, 3, 0.1],
     ['leaveItWindow', 'Window', 0.5, 5, 0.1],
     ['leaveItScore', 'Treat score', 0, 300, 10],
     ['leaveItTrust', 'Treat trust', 0, 40, 1],
@@ -148,6 +151,9 @@ export const SCHEMA = [
     ['chainBonus', 'Chain bonus per link', 0, 2, 0.05],
     ['tangleFumbleTime', 'Owner untangle time', 0.5, 15, 0.5],
     ['untangleTrustCost', 'Untangle trust cost', 0, 30, 1],
+    ['tangleSlack', 'Tangle slack let out', 0, 4, 0.1],
+    ['postBaitChance', 'Treat past lamppost chance', 0, 1, 0.05],
+    ['snackPickupTime', 'Sandwich pickup time', 0.5, 8, 0.1],
     ['joggerSpeed', 'Jogger speed', 1, 6, 0.1],
     ['tripScore', 'Trip score', 0, 2000, 10],
     ['tripCostAlert', 'Trip cost (alert)', 0, 80, 1],

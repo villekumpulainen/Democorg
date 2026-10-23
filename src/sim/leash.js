@@ -29,6 +29,7 @@ export function createLeash(cfg, hand, dog) {
     tangled: null, winding: 0,
     yankHold: 0, yankCooldown: 0,
     ignore: null, ignoreTimer: 0, // obstacle the owner just lifted the leash over
+    extra: 0, // m of slack the owner lets out (while fumbling with a tangle)
   };
 }
 
@@ -37,12 +38,13 @@ const mid = { x: 0, y: 0 };
 
 export function stepLeash(leash, cfg, hand, dog, obstacles, dt) {
   const pts = leash.points, last = pts.length - 1;
-  const seg = cfg.leashLength / last;
+  const len = cfg.leashLength + leash.extra;
+  const seg = len / last;
   if (leash.ignoreTimer > 0) {
     leash.ignoreTimer -= dt;
     if (leash.ignoreTimer <= 0) leash.ignore = null;
   }
-  const near = obstacles.filter((o) => o !== leash.ignore && isNear(hand, o, cfg.leashLength + 1));
+  const near = obstacles.filter((o) => o !== leash.ignore && isNear(hand, o, len + 1));
 
   // Integrate interior points.
   for (let i = 1; i < last; i++) {
@@ -67,7 +69,7 @@ export function stepLeash(leash, cfg, hand, dog, obstacles, dt) {
 
   // The rope solve keeps both ends pinned, so a rope longer than the leash means the dog
   // has gone too far: pull it back along the rope by the excess, then let the rope settle.
-  const excess = ropeLength(pts) - cfg.leashLength;
+  const excess = ropeLength(pts) - len;
   if (excess > 0) {
     const prev = pts[last - 1];
     const dx = prev.x - dog.x, dy = prev.y - dog.y, d = Math.hypot(dx, dy);
@@ -81,14 +83,14 @@ export function stepLeash(leash, cfg, hand, dog, obstacles, dt) {
 
   // Safety net: never further than the leash allows in a straight line.
   const sx = dog.x - hand.x, sy = dog.y - hand.y, sd = Math.hypot(sx, sy);
-  const maxD = cfg.leashLength * 1.06;
+  const maxD = len * 1.06;
   if (sd > maxD) {
     applyDogCorrection(dog, (sx / sd) * maxD - sx, (sy / sd) * maxD - sy);
     pts[last].x = dog.x; pts[last].y = dog.y;
   }
 
   leash.length = ropeLength(pts);
-  leash.taut = leash.length >= cfg.leashLength * TAUT_RATIO;
+  leash.taut = leash.length >= len * TAUT_RATIO;
 
   measureTangle(leash, near, cfg);
 }
