@@ -185,7 +185,9 @@ export const SCHEMA = [
   ]],
 ];
 
-const STORAGE_KEY = 'dogwalk.config.v1';
+// Only values that differ from DEFAULTS are stored, so changed defaults reach players
+// who haven't touched that slider. (v1 stored everything; it's ignored.)
+const STORAGE_KEY = 'dogwalk.config.v2';
 
 function load() {
   try {
@@ -199,7 +201,9 @@ function load() {
 export const config = { ...DEFAULTS, ...load() };
 
 export function saveConfig() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); } catch { /* storage unavailable */ }
+  const changed = {};
+  for (const k of Object.keys(DEFAULTS)) if (config[k] !== DEFAULTS[k]) changed[k] = config[k];
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(changed)); } catch { /* storage unavailable */ }
 }
 
 export function resetConfig() {
