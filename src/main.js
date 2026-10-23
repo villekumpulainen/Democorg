@@ -78,6 +78,8 @@ function showEnd() {
       <tr><td>Score</td><td>${game.score}</td></tr>
       ${r.home ? `<tr><td>Home bonus</td><td>${r.bonus}</td></tr>` : ''}
       <tr><td>Mischief</td><td>${game.mischief}</td></tr>
+      <tr><td>Havoc</td><td>${game.havoc}</td></tr>
+      <tr><td>Best chain</td><td>x${game.bestChain}</td></tr>
       <tr><td>Treats</td><td>${game.treats}</td></tr>
       <tr><td>Yanks</td><td>${game.yanks}</td></tr>
       <tr><td>Trust left</td><td>${Math.round(game.trust.value)}</td></tr>

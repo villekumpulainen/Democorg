@@ -28,16 +28,21 @@ export function createLeash(cfg, hand, dog) {
     tension: 0, rawTension: 0,
     tangled: null, winding: 0,
     yankHold: 0, yankCooldown: 0,
+    ignore: null, ignoreTimer: 0, // obstacle the owner just lifted the leash over
   };
 }
 
 const push = { x: 0, y: 0 };
 const mid = { x: 0, y: 0 };
 
-export function stepLeash(leash, cfg, hand, dog, obstacles) {
+export function stepLeash(leash, cfg, hand, dog, obstacles, dt) {
   const pts = leash.points, last = pts.length - 1;
   const seg = cfg.leashLength / last;
-  const near = obstacles.filter((o) => isNear(hand, o, cfg.leashLength + 1));
+  if (leash.ignoreTimer > 0) {
+    leash.ignoreTimer -= dt;
+    if (leash.ignoreTimer <= 0) leash.ignore = null;
+  }
+  const near = obstacles.filter((o) => o !== leash.ignore && isNear(hand, o, cfg.leashLength + 1));
 
   // Integrate interior points.
   for (let i = 1; i < last; i++) {
@@ -86,6 +91,21 @@ export function stepLeash(leash, cfg, hand, dog, obstacles) {
   leash.taut = leash.length >= cfg.leashLength * TAUT_RATIO;
 
   measureTangle(leash, near, cfg);
+}
+
+// The owner gives up and lifts the leash over the obstacle: straighten the rope and let it
+// pass through that obstacle for a moment.
+export function liftOver(leash, obstacle, hand, dog, seconds) {
+  const pts = leash.points, last = pts.length - 1;
+  for (let i = 0; i <= last; i++) {
+    const t = i / last;
+    const p = pts[i];
+    p.x = p.px = hand.x + (dog.x - hand.x) * t;
+    p.y = p.py = hand.y + (dog.y - hand.y) * t;
+  }
+  leash.ignore = obstacle;
+  leash.ignoreTimer = seconds;
+  leash.tangled = null;
 }
 
 // Distance constraints (stretch only) and obstacle collisions, ends pinned.

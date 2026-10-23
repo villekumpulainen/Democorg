@@ -2,6 +2,7 @@
 
 import { GRASS_LEFT, SIDEWALK_LEFT, SIDEWALK_RIGHT, CURB_RIGHT, OWNER_LANE_X } from './sim/world.js';
 import { TARGET_TYPES } from './sim/targets.js';
+import { isAlert } from './sim/owner.js';
 import { clamp, lerp } from './sim/util.js';
 
 const VIEW_WIDTH_M = 6;
@@ -71,6 +72,18 @@ export function render(ctx, game, cam, cfg) {
     if (o.kind === 'post') {
       circle(ctx, X(o.x), Y(o.y), o.r * ppm, game.leash.tangled === o ? '#ff5a4e' : '#222');
       circle(ctx, X(o.x), Y(o.y), o.r * ppm * 0.5, '#666');
+    } else if (o.kind === 'trash') {
+      if (o.tipped) {
+        ctx.save();
+        ctx.translate(X(o.x), Y(o.y));
+        ctx.rotate(o.x < 2 ? 0.3 : -0.3);
+        ctx.fillStyle = '#2f5a3a';
+        ctx.fillRect(-o.r * ppm, -o.r * 0.7 * ppm, o.r * 2.4 * ppm, o.r * 1.4 * ppm);
+        ctx.restore();
+      } else {
+        circle(ctx, X(o.x), Y(o.y), o.r * ppm, game.leash.tangled === o ? '#a33' : '#2f5a3a');
+        circle(ctx, X(o.x), Y(o.y), o.r * ppm * 0.75, '#3f7a4e');
+      }
     } else {
       ctx.fillStyle = game.leash.tangled === o ? '#a33' : '#6b4a2b';
       ctx.fillRect(X(o.x - o.w / 2), Y(o.y - o.h / 2), o.w * ppm, o.h * ppm);
@@ -91,6 +104,15 @@ export function render(ctx, game, cam, cfg) {
       circle(ctx, sx, sy, 0.18 * ppm, '#d98a2b');
       ctx.fillStyle = '#5a2e14';
       ctx.fillRect(sx - 0.18 * ppm, sy - 0.03 * ppm, 0.36 * ppm, 0.06 * ppm);
+    } else if (t.type === 'snack') {
+      ctx.fillStyle = '#e8c87a';
+      ctx.fillRect(sx - 0.2 * ppm, sy - 0.12 * ppm, 0.4 * ppm, 0.24 * ppm);
+      ctx.fillStyle = '#6aa84f';
+      ctx.fillRect(sx - 0.2 * ppm, sy - 0.03 * ppm, 0.4 * ppm, 0.06 * ppm);
+    } else if (t.type === 'trash') {
+      for (let i = 0; i < 5; i++) {
+        circle(ctx, sx + Math.cos(i * 2.4) * 0.22 * ppm, sy + Math.sin(i * 2.4) * 0.18 * ppm, 0.09 * ppm, ['#c9b37a', '#8a7a5a', '#d8d8d0'][i % 3]);
+      }
     } else if (t.type === 'sock') {
       ctx.fillStyle = '#4a5a8a';
       ctx.fillRect(sx - 0.3 * ppm, sy - 0.45 * ppm, 0.6 * ppm, 0.9 * ppm);
@@ -126,10 +148,12 @@ export function render(ctx, game, cam, cfg) {
     }
   }
 
+  drawCritters(ctx, game, X, Y, ppm);
+
   // Owner + attention
   const o = game.owner;
   const ox = X(o.x), oy = Y(o.y);
-  if (o.attention === 'alert') {
+  if (isAlert(o)) {
     const a = Math.atan2(game.dog.y - o.y, game.dog.x - o.x);
     ctx.fillStyle = 'rgba(255,70,60,0.18)';
     ctx.beginPath();
@@ -189,12 +213,51 @@ export function render(ctx, game, cam, cfg) {
     ctx.fillRect(0, 0, w, h);
   }
 
-  drawHud(ctx, game, w);
+  drawHud(ctx, game, cfg, w);
+}
+
+function drawCritters(ctx, game, X, Y, ppm) {
+  for (const c of game.critters) {
+    const sx = X(c.x), sy = Y(c.y);
+    if (c.kind === 'jogger') {
+      if (c.state === 'down') {
+        ctx.fillStyle = '#9b59d0';
+        ctx.beginPath();
+        ctx.ellipse(sx, sy, c.r * 1.8 * ppm, c.r * 0.8 * ppm, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffd34e';
+        ctx.font = `bold ${Math.round(Math.max(12, ppm * 0.25))}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('✶ ✶', sx, sy - c.r * 1.6 * ppm + Math.sin(game.time * 8) * 3);
+      } else {
+        const bob = Math.sin(c.phase) * 0.06 * ppm;
+        circle(ctx, sx + bob, sy, c.r * ppm, '#9b59d0');
+        circle(ctx, sx + bob, sy, c.r * 0.55 * ppm, '#e8c39e');
+      }
+    } else if (c.kind === 'squirrel') {
+      const a = Math.hypot(c.vx, c.vy) > 0.1 ? Math.atan2(c.vy, c.vx) : -Math.PI / 2;
+      circle(ctx, sx - Math.cos(a) * 0.18 * ppm, sy - Math.sin(a) * 0.18 * ppm, 0.11 * ppm, '#a0806a'); // tail
+      circle(ctx, sx, sy, c.r * ppm, '#7a6250');
+    } else if (c.kind === 'pigeons') {
+      const fade = c.state === 'fly' ? Math.max(0, 1 - c.timer / 1.5) : 1;
+      ctx.globalAlpha = fade;
+      const size = c.state === 'fly' ? 0.12 : 0.08;
+      for (const b of c.birds) circle(ctx, X(c.x + b.dx), Y(c.y + b.dy), size * ppm, '#8a8f99');
+      ctx.globalAlpha = 1;
+    }
+  }
 }
 
 function drawAttentionIcon(ctx, o, x, y, ppm, time) {
   const s = Math.max(10, ppm * 0.2);
-  if (o.attention === 'alert') {
+  if (o.busy) {
+    // Flustered: swearing symbols for a tangle, a jolt for a startle.
+    ctx.fillStyle = o.busy.reason === 'tangled' ? '#ff9a3c' : '#ff7be0';
+    ctx.font = `bold ${Math.round(s * 1.4)}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    const jitter = Math.sin(time * 30) * 2;
+    ctx.fillText(o.busy.reason === 'tangled' ? '#@!' : '!?', x + jitter, y + s * 0.5);
+  } else if (o.attention === 'alert') {
     ctx.fillStyle = '#fff';
     ctx.beginPath();
     ctx.ellipse(x, y, s, s * 0.6, 0, 0, Math.PI * 2);
@@ -216,7 +279,7 @@ function drawAttentionIcon(ctx, o, x, y, ppm, time) {
   }
 }
 
-function drawHud(ctx, game, w) {
+function drawHud(ctx, game, cfg, w) {
   const pad = 12, barW = Math.min(w - 2 * pad - 110, 260), barH = 16;
   // Trust bar
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -237,7 +300,12 @@ function drawHud(ctx, game, w) {
   ctx.font = 'bold 20px system-ui, sans-serif';
   ctx.fillText(String(game.score), w - pad, pad + 16);
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText(`mischief ${game.mischief}`, w - pad, pad + 32);
+  ctx.fillText(`mischief ${game.mischief + game.havoc}`, w - pad, pad + 32);
+  if (game.chain.timer > 0 && game.chain.count > 1) {
+    ctx.fillStyle = '#ff7be0';
+    ctx.font = 'bold 14px system-ui, sans-serif';
+    ctx.fillText(`chain x${game.chain.count}`, w - pad, pad + 50);
+  }
 
   // Walk progress
   const prog = clamp(-game.owner.y / game.walkDistance, 0, 1);
@@ -249,8 +317,14 @@ function drawHud(ctx, game, w) {
   if (game.leash.tangled) {
     ctx.textAlign = 'center';
     ctx.font = 'bold 22px system-ui, sans-serif';
-    ctx.fillStyle = '#ff5a4e';
-    ctx.fillText('TANGLED!', w / 2, pad + 80);
+    ctx.fillStyle = '#ff9a3c';
+    ctx.fillText('TANGLED! Owner is busy', w / 2, pad + 80);
+    // How long until the owner gives up and untangles it themselves.
+    const left = 1 - clamp(game.tangleTimer / cfg.tangleFumbleTime, 0, 1);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(w / 2 - 80, pad + 88, 160, 5);
+    ctx.fillStyle = '#ff9a3c';
+    ctx.fillRect(w / 2 - 80, pad + 88, 160 * left, 5);
   }
 }
 

@@ -18,7 +18,12 @@ Plain JavaScript modules and an HTML canvas. There is no framework, no build ste
 | Eye and red cone | The owner is watching. Mischief costs full trust, and starting a grab costs extra. |
 | Burger, stroller sock, smelly patch | Stay inside the small ring until the meter fills. Burgers and smelly patches pull the dog's nose toward them (dashed ring). |
 | "Leave it!" | Get outside the dashed red ring within about 2 s to earn a treat (+50 score, +15 trust). Grabbing that target anyway costs extra trust. |
-| Lampposts and benches | The leash wraps around them. Wrap one far enough and the owner stops until you unwind it, which you can also do on purpose. |
+| Lampposts, benches, trash cans | The leash wraps around them. Wrap one far enough and the owner stops and gets busy untangling (`#@!`). While they're busy they aren't watching, so mischief is cheap. Unwind it yourself, or after a few seconds (see the bar under "TANGLED!") the owner lifts the leash over and loses some trust. |
+| Joggers (purple) | Hold the leash taut across their path to trip them. |
+| Squirrels (brown) | They bolt for the trees on the grass when the dog gets close. Cut them off and catch one. |
+| Pigeons (grey dots) | Charge the flock to scatter it. If they burst near the owner, the owner is startled (`!?`), stops, and drops their sandwich. |
+| Trash cans (green) | Ram one at speed to knock it over. Garbage spills out to grab, and any pigeons nearby scatter. |
+| Chains | Havoc and mischief within 4 s of each other build a chain. Each link adds +50% score. |
 
 ## Run it locally
 
@@ -73,6 +78,7 @@ src/sim/leash.js          Verlet rope, tension, tangle detection
 src/sim/owner.js          walking, attention cycle, speech
 src/sim/trust.js          trust meter
 src/sim/targets.js        target types, grab meter, nose pull, "leave it"
+src/sim/critters.js       joggers, squirrels, pigeons, trash-can tipping
 src/sim/world.js          street layout, obstacle spawning, collision helpers
 ```
 

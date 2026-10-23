@@ -1,5 +1,6 @@
 // The owner: walks forward at a constant pace (slowed by tension, stopped by tangles)
-// and cycles distracted -> warning -> alert on a randomized timer.
+// and cycles distracted -> warning -> alert on a randomized timer. While busy (untangling
+// the leash, or startled) they stand still and aren't watching the dog.
 
 import { rand } from './util.js';
 import { OWNER_LANE_X } from './world.js';
@@ -11,12 +12,17 @@ export function createOwner(cfg) {
     attention: 'distracted', // 'distracted' | 'warning' | 'alert'
     attentionTimer: 0,
     speech: null, speechTimer: 0,
+    busy: null, // null | { reason: 'tangled' | 'startled', timer }
   };
   owner.attentionTimer = randRange(cfg.distractedMin, cfg.distractedMax);
   return owner;
 }
 
-export const isAlert = (owner) => owner.attention === 'alert';
+export const isAlert = (owner) => owner.attention === 'alert' && !owner.busy;
+
+export function startle(owner, seconds) {
+  owner.busy = { reason: 'startled', timer: seconds };
+}
 
 export function stepOwner(owner, cfg, dt, tension, tangled) {
   owner.attentionTimer -= dt;
@@ -32,7 +38,17 @@ export function stepOwner(owner, cfg, dt, tension, tangled) {
     owner.attention = owner.attentionTimer <= cfg.alertWarning ? 'warning' : 'distracted';
   }
 
-  owner.speed = tangled ? 0 : cfg.ownerSpeed * Math.max(0, 1 - tension * cfg.ownerSlowAtFullTension);
+  if (tangled) {
+    if (!owner.busy) owner.busy = { reason: 'tangled', timer: Infinity };
+  } else if (owner.busy?.reason === 'tangled') {
+    owner.busy = null;
+  }
+  if (owner.busy) {
+    owner.busy.timer -= dt;
+    if (owner.busy.timer <= 0) owner.busy = null;
+  }
+
+  owner.speed = owner.busy ? 0 : cfg.ownerSpeed * Math.max(0, 1 - tension * cfg.ownerSlowAtFullTension);
   owner.y -= owner.speed * dt;
   owner.hand.x = owner.x + 0.3;
   owner.hand.y = owner.y - 0.1;

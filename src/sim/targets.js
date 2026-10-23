@@ -9,7 +9,11 @@ export const TARGET_TYPES = {
   burger: { label: 'Burger', smelly: true, prefix: 'burger' },
   sock: { label: 'Sock', smelly: false, prefix: 'sock' },
   smelly: { label: 'Roll', smelly: true, prefix: 'smelly' },
+  // Only appear from havoc: dropped by a startled owner, spilled from a tipped trash can.
+  snack: { label: 'Sandwich', smelly: true, prefix: 'snack' },
+  trash: { label: 'Trash', smelly: true, prefix: 'trash' },
 };
+const SPAWNABLE = ['burger', 'sock', 'smelly'];
 
 const GRAB_CANCEL_FACTOR = 1.3; // hysteresis so the meter doesn't flicker at the edge
 
@@ -37,7 +41,7 @@ export function createTarget(type, x, y) {
 }
 
 export function spawnTarget(targets, obstacles, y) {
-  const type = pick(Object.keys(TARGET_TYPES));
+  const type = pick(SPAWNABLE);
   let x = 2;
   for (let tries = 0; tries < 8; tries++) {
     if (type === 'sock') x = Math.random() < 0.5 ? 0.7 : 3.3;            // parked stroller

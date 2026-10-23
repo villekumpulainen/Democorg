@@ -53,6 +53,25 @@ export const DEFAULTS = {
   burgerScore: 300, burgerCostAlert: 30, burgerCostDistracted: 10, burgerGrabTime: 1.5,
   sockScore: 500, sockCostAlert: 40, sockCostDistracted: 15, sockGrabTime: 2.0,
   smellyScore: 400, smellyCostAlert: 35, smellyCostDistracted: 12, smellyGrabTime: 1.5,
+  snackScore: 300, snackCostAlert: 30, snackCostDistracted: 10, snackGrabTime: 1.0,
+  trashScore: 350, trashCostAlert: 25, trashCostDistracted: 8, trashGrabTime: 1.5,
+
+  // --- Havoc (score, trust cost when watched / not watched) ---
+  critterSpawnMin: 6, critterSpawnMax: 11, // s between joggers, squirrels, pigeons
+  chainWindow: 4,              // s after a havoc event in which the next one chains
+  chainBonus: 0.5,             // extra score multiplier per chain link
+  tangleFumbleTime: 4,         // s the owner fumbles with a tangle before lifting the leash over
+  untangleTrustCost: 6,        // trust lost when the owner has to untangle it themselves
+  joggerSpeed: 3.2,
+  tripScore: 600, tripCostAlert: 40, tripCostDistracted: 15,
+  squirrelSpeed: 2.8, squirrelFleeRadius: 2.5,
+  squirrelScore: 450, squirrelCostAlert: 20, squirrelCostDistracted: 6,
+  pigeonScareRadius: 1.3,
+  pigeonScore: 150, pigeonCostAlert: 5, pigeonCostDistracted: 0,
+  startleRadius: 3.5,          // pigeons bursting this close startle the owner into dropping their snack
+  startleTime: 2.5,
+  trashTipSpeed: 1.8,          // m/s the dog must hit a trash can at to knock it over
+  trashTipScore: 250, trashTipCostAlert: 15, trashTipCostDistracted: 5,
 };
 
 // Slider definitions for the tuning panel.
@@ -121,6 +140,35 @@ export const SCHEMA = [
     ['smellyCostAlert', 'Smelly cost (alert)', 0, 80, 1],
     ['smellyCostDistracted', 'Smelly cost (distracted)', 0, 80, 1],
     ['smellyGrabTime', 'Smelly grab time', 0.2, 5, 0.1],
+  ]],
+  ['Havoc', [
+    ['critterSpawnMin', 'Critter spawn min', 1, 30, 0.5],
+    ['critterSpawnMax', 'Critter spawn max', 1, 30, 0.5],
+    ['chainWindow', 'Chain window', 0.5, 10, 0.5],
+    ['chainBonus', 'Chain bonus per link', 0, 2, 0.05],
+    ['tangleFumbleTime', 'Owner untangle time', 0.5, 15, 0.5],
+    ['untangleTrustCost', 'Untangle trust cost', 0, 30, 1],
+    ['joggerSpeed', 'Jogger speed', 1, 6, 0.1],
+    ['tripScore', 'Trip score', 0, 2000, 10],
+    ['tripCostAlert', 'Trip cost (alert)', 0, 80, 1],
+    ['tripCostDistracted', 'Trip cost (distracted)', 0, 80, 1],
+    ['squirrelSpeed', 'Squirrel speed', 0.5, 6, 0.1],
+    ['squirrelFleeRadius', 'Squirrel flee radius', 0.5, 5, 0.1],
+    ['squirrelScore', 'Squirrel score', 0, 2000, 10],
+    ['squirrelCostAlert', 'Squirrel cost (alert)', 0, 80, 1],
+    ['squirrelCostDistracted', 'Squirrel cost (distracted)', 0, 80, 1],
+    ['pigeonScareRadius', 'Pigeon scare radius', 0.3, 4, 0.1],
+    ['pigeonScore', 'Pigeon score', 0, 1000, 10],
+    ['pigeonCostAlert', 'Pigeon cost (alert)', 0, 80, 1],
+    ['pigeonCostDistracted', 'Pigeon cost (distracted)', 0, 80, 1],
+    ['startleRadius', 'Startle radius', 0, 8, 0.1],
+    ['startleTime', 'Startle time', 0.5, 6, 0.1],
+    ['trashTipSpeed', 'Trash tip speed', 0.5, 5, 0.1],
+    ['trashTipScore', 'Trash tip score', 0, 1000, 10],
+    ['trashTipCostAlert', 'Trash tip cost (alert)', 0, 80, 1],
+    ['trashTipCostDistracted', 'Trash tip cost (distracted)', 0, 80, 1],
+    ['snackScore', 'Dropped sandwich score', 0, 1000, 10],
+    ['trashScore', 'Spilled trash score', 0, 1000, 10],
   ]],
   ['Walk', [
     ['walkDistance', 'Walk distance (next walk)', 30, 400, 5],

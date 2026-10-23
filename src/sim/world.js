@@ -1,4 +1,4 @@
-// The street: layout constants, obstacles (lampposts, benches) and their collision.
+// The street: layout constants, obstacles (lampposts, benches, trash cans) and their collision.
 // World axes: x across the street (m), y along it. Walking forward = decreasing y.
 
 import { rand } from './util.js';
@@ -17,6 +17,7 @@ export function createWorld() {
 
 export function createPost(x, y) { return { kind: 'post', x, y, r: 0.15 }; }
 export function createBench(x, y) { return { kind: 'bench', x, y, w: 0.55, h: 1.6 }; }
+export function createTrash(x, y) { return { kind: 'trash', x, y, r: 0.28, tipped: false, seeded: false }; }
 
 // Fill obstacles ahead of the owner, stopping short of home.
 export function spawnObstacles(world, obstacles, ownerY, cfg) {
@@ -24,11 +25,10 @@ export function spawnObstacles(world, obstacles, ownerY, cfg) {
   const homeY = -cfg.walkDistance + 3;
   while (world.nextObstacleY > horizon && world.nextObstacleY > homeY) {
     const y = world.nextObstacleY;
-    if (Math.random() < 0.7) {
-      obstacles.push(createPost(Math.random() < 0.5 ? 0.35 : 3.75, y));
-    } else {
-      obstacles.push(createBench(3.55, y));
-    }
+    const roll = Math.random();
+    if (roll < 0.6) obstacles.push(createPost(Math.random() < 0.5 ? 0.35 : 3.75, y));
+    else if (roll < 0.8) obstacles.push(createBench(3.55, y));
+    else obstacles.push(createTrash(Math.random() < 0.5 ? 0.4 : 3.7, y));
     const lo = Math.min(cfg.obstacleSpacingMin, cfg.obstacleSpacingMax);
     const hi = Math.max(cfg.obstacleSpacingMin, cfg.obstacleSpacingMax);
     world.nextObstacleY -= rand(lo, hi);
@@ -38,7 +38,7 @@ export function spawnObstacles(world, obstacles, ownerY, cfg) {
 // Push point p out of obstacle o (inflated by margin). Returns true if it moved.
 // Writes the push into `out` when given.
 export function pushOut(p, o, margin, out) {
-  if (o.kind === 'post') {
+  if (o.r) { // round: lamppost, trash can
     const dx = p.x - o.x, dy = p.y - o.y;
     const r = o.r + margin;
     const d2 = dx * dx + dy * dy;
