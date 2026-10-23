@@ -10,7 +10,8 @@ Plain JavaScript modules and an HTML canvas. There is no framework, no build ste
 
 | Thing | What it does |
 | --- | --- |
-| Hold a finger or the mouse button | The dog runs toward that point, with some inertia. Let go and it coasts to a stop. |
+| Touch anywhere and drag a little | A floating joystick appears where you touch. The dog runs in the direction you drag, faster the further you drag (up to the ring's edge), with some inertia. Drag past the edge and the ring follows your finger. Let go and the dog coasts to a stop. Your finger never has to cover the dog. |
+| **Tune → Controls: Stick / Follow** | Switches to the original scheme, where the dog runs toward your finger, for comparison. |
 | Leash colour | Goes from white to red as tension rises. Pulling against a taut leash drains trust and slows the owner. Pull too hard for too long and the owner yanks the dog back. |
 | Owner's phone icon | The owner is distracted. Mischief costs much less trust. |
 | Flashing `!` | About 0.5 s of warning before the owner looks up. |
@@ -61,7 +62,8 @@ The simulation code is kept separate from the browser code so the logic can be p
 ```
 index.html, style.css     page shell, HUD buttons, overlays
 src/config.js             all tunable numbers (DEFAULTS) + slider schema
-src/main.js               fixed 60 Hz loop, input, screens, panel wiring
+src/main.js               fixed 60 Hz loop, pointer events, screens, panel wiring
+src/input.js              control schemes (floating stick, finger follow) → dog target
 src/render.js             greybox canvas drawing and camera (reads state only)
 src/ui/tuning.js          tuning panel
 src/ui/debug.js           debug overlay text

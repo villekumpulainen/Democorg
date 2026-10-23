@@ -19,6 +19,11 @@ export const DEFAULTS = {
   spawnMin: 8, spawnMax: 14,   // s between targets
   grabRadius: 0.5,             // m
 
+  // --- Controls ---
+  controlMode: 0,              // 0 = floating stick, 1 = dog follows the finger (toggle in the panel)
+  stickRadius: 55,             // px of drag for full speed
+  stickDeadZone: 0.15,         // fraction of the radius that counts as "stop"
+
   // --- Extra knobs the spec implies ---
   startTrust: 60,
   walkDistance: 180,           // m to home (~2.5 min at 1.2 m/s)
@@ -52,6 +57,10 @@ export const DEFAULTS = {
 
 // Slider definitions for the tuning panel.
 export const SCHEMA = [
+  ['Controls', [
+    ['stickRadius', 'Stick radius (px)', 20, 150, 1],
+    ['stickDeadZone', 'Stick dead zone', 0, 0.6, 0.01],
+  ]],
   ['Movement', [
     ['ownerSpeed', 'Owner walk speed', 0.3, 3, 0.05],
     ['dogMaxSpeed', 'Dog max speed', 1, 8, 0.1],

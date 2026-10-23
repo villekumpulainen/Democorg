@@ -1,8 +1,8 @@
-// The dog: finger-follow steering with inertia, plus collision with the street.
+// The dog: steers toward a target point with inertia, plus collision with the street.
 
 import { pushOut, DOG_MIN_X, DOG_MAX_X } from './world.js';
 
-const ARRIVE_GAIN = 3;       // desired speed per meter of distance to the finger
+export const ARRIVE_GAIN = 3; // desired speed per meter of distance to the target
 const NOSE_BIAS_TIME = 0.5;  // s: nose pull acts as a velocity bias the steering can't fully cancel
 const DOG_RADIUS = 0.22;
 
@@ -14,7 +14,7 @@ export function createDog(x, y) {
   };
 }
 
-// target: {x, y} in world meters, or null when the finger is up.
+// target: {x, y} in world meters to run toward, or null when the finger is up.
 // noseX/noseY: nose-pull acceleration (m/s²).
 export function stepDog(dog, target, cfg, dt, noseX, noseY) {
   dog.intent = 0;
@@ -23,15 +23,17 @@ export function stepDog(dog, target, cfg, dt, noseX, noseY) {
   if (target && dog.stun <= 0) {
     const dx = target.x - dog.x, dy = target.y - dog.y;
     const d = Math.hypot(dx, dy);
-    if (d > 0.02) {
-      const want = Math.min(cfg.dogMaxSpeed, d * ARRIVE_GAIN);
-      const tvx = (dx / d) * want + noseX * NOSE_BIAS_TIME;
-      const tvy = (dy / d) * want + noseY * NOSE_BIAS_TIME;
-      let sx = tvx - dog.vx, sy = tvy - dog.vy;
-      const s = Math.hypot(sx, sy), maxDv = cfg.dogAccel * dt;
-      if (s > maxDv) { sx *= maxDv / s; sy *= maxDv / s; }
-      dog.vx += sx; dog.vy += sy;
-      dog.intentX = dx / d; dog.intentY = dy / d;
+    // On (or very near) the target the dog brakes to a stop.
+    const want = d > 0.02 ? Math.min(cfg.dogMaxSpeed, d * ARRIVE_GAIN) : 0;
+    const ux = d > 0.02 ? dx / d : 0, uy = d > 0.02 ? dy / d : 0;
+    const tvx = ux * want + noseX * NOSE_BIAS_TIME;
+    const tvy = uy * want + noseY * NOSE_BIAS_TIME;
+    let sx = tvx - dog.vx, sy = tvy - dog.vy;
+    const s = Math.hypot(sx, sy), maxDv = cfg.dogAccel * dt;
+    if (s > maxDv) { sx *= maxDv / s; sy *= maxDv / s; }
+    dog.vx += sx; dog.vy += sy;
+    if (want > 0) {
+      dog.intentX = ux; dog.intentY = uy;
       dog.intent = want / cfg.dogMaxSpeed;
     }
   } else {

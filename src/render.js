@@ -28,7 +28,7 @@ export function screenToWorld(cam, sx, sy) {
   };
 }
 
-export function render(ctx, game, cam, cfg, touch) {
+export function render(ctx, game, cam, cfg) {
   const { w, h, ppm } = cam;
   const X = (x) => toScreenX(cam, x), Y = (y) => toScreenY(cam, y);
 
@@ -160,12 +160,6 @@ export function render(ctx, game, cam, cfg, touch) {
   circle(ctx, dx, dy, d.radius * ppm, '#b07a3c');
   circle(ctx, dx + Math.cos(heading) * d.radius * ppm, dy + Math.sin(heading) * d.radius * ppm, 0.1 * ppm, '#7a4e22');
   circle(ctx, dx + Math.cos(heading) * d.radius * 1.4 * ppm, dy + Math.sin(heading) * d.radius * 1.4 * ppm, 0.04 * ppm, '#111');
-
-  // Finger target
-  if (touch) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ring(ctx, X(touch.x), Y(touch.y), 0.25 * ppm, 2);
-  }
 
   // Speech bubble
   if (o.speech) {

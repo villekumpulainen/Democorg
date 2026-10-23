@@ -2,7 +2,8 @@
 
 import { config } from './config.js';
 import { createGame, stepGame } from './sim/game.js';
-import { createCamera, updateCamera, render, screenToWorld } from './render.js';
+import { createCamera, updateCamera, render } from './render.js';
+import { createPointer, pointerDown, pointerUp, controlTarget, drawControls } from './input.js';
 import { createTuningPanel } from './ui/tuning.js';
 import { updateDebug } from './ui/debug.js';
 
@@ -17,7 +18,7 @@ const panel = document.getElementById('panel');
 
 let game = createGame(config);
 const cam = createCamera();
-const pointer = { active: false, id: null, sx: 0, sy: 0 };
+const pointer = createPointer();
 
 // --- Canvas sizing ---------------------------------------------------------
 function resize() {
@@ -31,12 +32,10 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// --- Input: one finger (or mouse button) steers ---------------------------
+// --- Input: one finger (or mouse button) steers; see input.js -------------
 canvas.addEventListener('pointerdown', (e) => {
   if (game.state !== 'playing') return;
-  pointer.active = true;
-  pointer.id = e.pointerId;
-  pointer.sx = e.clientX; pointer.sy = e.clientY;
+  pointerDown(pointer, e.clientX, e.clientY, e.pointerId);
   canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove', (e) => {
@@ -44,9 +43,7 @@ canvas.addEventListener('pointermove', (e) => {
   pointer.sx = e.clientX; pointer.sy = e.clientY;
 });
 const release = (e) => {
-  if (e.pointerId !== pointer.id) return;
-  pointer.active = false;
-  pointer.id = null;
+  if (e.pointerId === pointer.id) pointerUp(pointer);
 };
 canvas.addEventListener('pointerup', release);
 canvas.addEventListener('pointercancel', release);
@@ -65,7 +62,8 @@ function showOverlay(html) {
 function showStart() {
   showOverlay(`
     <h1>Dog Walk Mischief</h1>
-    <p>Hold a finger (or mouse) where the dog should go.<br>
+    <p>Touch anywhere and drag a little: the dog runs that way.<br>
+    (Prefer the dog chasing your finger? Tune → Controls.)<br>
     Pull against the leash and the owner loses trust.<br>
     Grab burgers, socks and smelly spots for points —<br>
     ideally while the owner is on their phone.</p>
@@ -92,8 +90,7 @@ function startWalk() {
   game = createGame(config);
   game.state = 'playing';
   overlay.hidden = true;
-  pointer.active = false;
-  pointer.id = null;
+  pointerUp(pointer);
 }
 
 overlay.addEventListener('click', (e) => {
@@ -123,8 +120,8 @@ function frame(now) {
   acc += dt;
   let steps = 0;
   while (acc >= STEP && steps < MAX_STEPS_PER_FRAME) {
-    // Re-project the finger every tick: a held finger stays fixed on screen while the world scrolls.
-    const target = pointer.active ? screenToWorld(cam, pointer.sx, pointer.sy) : null;
+    // Recomputed every tick: the world scrolls and the dog moves under a held finger.
+    const target = controlTarget(pointer, cam, game.dog, config);
     const wasPlaying = game.state === 'playing';
     stepGame(game, config, target, STEP);
     if (wasPlaying && game.state === 'over') showEnd();
@@ -134,8 +131,8 @@ function frame(now) {
   }
   if (steps === MAX_STEPS_PER_FRAME) acc = 0;
 
-  const touch = pointer.active ? screenToWorld(cam, pointer.sx, pointer.sy) : null;
-  render(ctx, game, cam, config, touch);
+  render(ctx, game, cam, config);
+  drawControls(ctx, pointer, cam, config);
 
   debugTimer -= dt;
   if (!debugEl.hidden && debugTimer <= 0) {

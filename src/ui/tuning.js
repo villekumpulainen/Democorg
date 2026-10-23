@@ -1,6 +1,8 @@
-// Collapsible tuning panel: a live slider per config value, copy-as-JSON and reset.
+// Collapsible tuning panel: a control-scheme toggle, a live slider per config value,
+// copy-as-JSON and reset.
 
 import { config, SCHEMA, saveConfig, resetConfig } from '../config.js';
+import { CONTROL_NAMES } from '../input.js';
 
 export function createTuningPanel(root, { onRestart }) {
   const inputs = {};
@@ -28,7 +30,9 @@ export function createTuningPanel(root, { onRestart }) {
     }
   }
 
+  const controls = root.querySelector('[data-action=controls]');
   const sync = () => {
+    controls.textContent = `Controls: ${CONTROL_NAMES[config.controlMode] ?? CONTROL_NAMES[0]}`;
     for (const [key, { input, out }] of Object.entries(inputs)) {
       input.value = config[key];
       out.textContent = format(config[key]);
@@ -36,6 +40,11 @@ export function createTuningPanel(root, { onRestart }) {
   };
   sync();
 
+  controls.addEventListener('click', () => {
+    config.controlMode = (config.controlMode + 1) % CONTROL_NAMES.length;
+    saveConfig();
+    sync();
+  });
   root.querySelector('[data-action=copy]').addEventListener('click', async (e) => {
     const json = JSON.stringify(config, null, 2);
     try {
