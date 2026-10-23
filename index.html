@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#2f5530">
+  <title>Dog Walk Mischief</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="overlay" hidden></div>
+
+  <div id="toolbar">
+    <button id="toggle-panel" title="Tuning panel">Tune</button>
+    <button id="toggle-debug" title="Debug overlay">Debug</button>
+  </div>
+
+  <pre id="debug" hidden></pre>
+
+  <div id="panel" hidden>
+    <div class="panel-actions">
+      <button data-action="copy">Copy config as JSON</button>
+      <button data-action="reset">Reset</button>
+      <button data-action="restart">Restart walk</button>
+    </div>
+    <div class="panel-body"></div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

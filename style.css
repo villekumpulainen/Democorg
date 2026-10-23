@@ -1,0 +1,100 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #2f5530;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body { position: fixed; inset: 0; }
+
+canvas {
+  display: block;
+  touch-action: none;
+}
+
+button {
+  font: inherit;
+  font-size: 14px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+#overlay[hidden] { display: none; }
+#overlay h1 { margin: 0 0 8px; }
+#overlay p { line-height: 1.5; max-width: 340px; }
+#overlay table { border-collapse: collapse; margin-bottom: 12px; font-size: 18px; }
+#overlay td { padding: 2px 12px; text-align: left; }
+#overlay td + td { text-align: right; font-weight: bold; }
+#overlay button { font-size: 20px; padding: 12px 28px; background: #3b6fd6; border: none; }
+
+#toolbar {
+  position: fixed;
+  left: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 8px;
+}
+
+#debug {
+  position: fixed;
+  left: 8px;
+  top: 76px;
+  margin: 0;
+  padding: 8px;
+  font: 11px/1.35 ui-monospace, Menlo, monospace;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+#panel {
+  position: fixed;
+  right: 8px;
+  bottom: calc(60px + env(safe-area-inset-bottom));
+  width: min(340px, calc(100vw - 16px));
+  max-height: 60vh;
+  overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  background: rgba(20, 20, 24, 0.92);
+  border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 13px;
+}
+#panel[hidden] { display: none; }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.panel-actions button { font-size: 12px; padding: 6px 8px; }
+#panel h3 { margin: 12px 0 4px; font-size: 13px; color: #9cf; }
+#panel .row {
+  display: grid;
+  grid-template-columns: 1fr 110px 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+#panel input[type=range] { width: 100%; }
+#panel output { text-align: right; font-variant-numeric: tabular-nums; }
